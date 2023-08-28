@@ -6,6 +6,11 @@ from prompt_toolkit.shortcuts import clear
 import difflib
 import re
 
+def is_blank(value):
+    if value is None or value.strip() != "":
+        return True
+    else:
+        return False
 
 def list_get(l, idx, default):
     try:
@@ -143,13 +148,13 @@ def create_mapping_template(json_a_paths, json_b_paths, mapping_template={}):
 
     prev_index = 0
     index = 0
-    max = len(json_a_paths)
+    max_len = len(json_a_paths)
 
-    while index < max:
+    while index < max_len:
         exist_mapping = mapping_template.get(json_a_paths[index])
         clear()
-        msg = "END MODIFY" if index >= max - 1 else "next"
-        print(f"Path {index + 1}/{max}"
+        msg = "END MODIFY" if index >= max_len - 1 else "next"
+        print(f"Path {index + 1}/{max_len}"
               f"\nType: \";p\" previous, "
               f"\";n\" {msg}, "
               f"\";d\" delete current path, "
@@ -202,7 +207,7 @@ def create_mapping_template(json_a_paths, json_b_paths, mapping_template={}):
         elif result.startswith(";j"):
             action = "jump"
             jump_index = int(re.search(r'\d+', result).group())
-            index = jump_index if jump_index < max else max - 1
+            index = jump_index if jump_index < max_len else max_len - 1
             if exist_mapping:
                 path_b = exist_mapping
             else:
@@ -229,7 +234,7 @@ def create_mapping_template(json_a_paths, json_b_paths, mapping_template={}):
         else:
             mapping_template[json_a_paths[correct_index]] = path_b
 
-        if (action == "right" or action == "enter") and index >= max:
+        if (action == "right" or action == "enter") and index >= max_len:
             print(f"Do you want to end modify mapping template(Y/N)?")
             user_input = input()
             if user_input == "Y" or user_input == "y":
@@ -263,7 +268,7 @@ def create_manual_list_mapping(json_a_path, json_b_path, json_a_path_completer, 
         elif result.startswith(";j"):
             action = "jump"
             jump_index = int(re.search(r'\d+', result).group())
-            index = jump_index if jump_index < max else max - 1
+            index = jump_index if jump_index < max_len else max_len - 1
         elif result == ";q":
             action = "exit"
         else:
@@ -319,7 +324,7 @@ def create_manual_list_mapping(json_a_path, json_b_path, json_a_path_completer, 
 def create_array_sorting_rules(paths, json, arr_soring_rules={}):
     index = 0
     arr_paths = list(filter(lambda path: path.endswith("[]"), paths))
-    max = len(arr_paths)
+    max_len = len(arr_paths)
     keys = get_all_keys(json)
     completer = CustomWordCompleter(keys)
 
@@ -330,7 +335,7 @@ def create_array_sorting_rules(paths, json, arr_soring_rules={}):
             arr_soring_rules[path]["priority"] = 0
 
     def command(prompt_result):
-        nonlocal max
+        nonlocal max_len
         nonlocal index
         nonlocal arr_paths
         nonlocal arr_soring_rules
@@ -353,7 +358,7 @@ def create_array_sorting_rules(paths, json, arr_soring_rules={}):
         elif prompt_result.startswith(";j"):
             action = "jump"
             jump_index = int(re.search(r'\d+', prompt_result).group())
-            index = jump_index if jump_index < max else max - 1
+            index = jump_index if jump_index < max_len else max_len - 1
         elif prompt_result == ";q":
             action = "exit"
         else:
@@ -362,7 +367,7 @@ def create_array_sorting_rules(paths, json, arr_soring_rules={}):
         return action, prompt_result
 
     curr_index = 0
-    while index < max:
+    while index < max_len:
         curr_index = index
         clear()
 
@@ -400,7 +405,7 @@ def create_array_sorting_rules(paths, json, arr_soring_rules={}):
     return arr_soring_rules
 
 
-def find_value_by_path(json, path):
+def find_dps_valuey_path(json, path):
     pos_list = find_all_square_brackets_indices(path)
 
     prev_end_pos = 0
@@ -465,11 +470,12 @@ def find_best_match(target_path, src_paths):
     return best_match
 
 
-def auto_mapping(target_paths, src_paths):
+def auto_mapping(target_paths, src_paths, mapping_template):
     mapping = {}
     for target_path in target_paths:
-        best_match = find_best_match(target_path, src_paths);
-        mapping[target_path] = best_match
+        if is_blank(mapping_template.get(target_path, None)):
+            best_match = find_best_match(target_path, src_paths);
+            mapping[target_path] = best_match
     return mapping
 
 
@@ -512,24 +518,23 @@ def map_b_paths_to_a(mapping_template, b_path_value_dict):
 def compare_dicts(dict_a, dict_b):
     diff_list = []
 
-    for path, value_a in dict_a.items():
-        value_b = dict_b.get(path)
-        is_match = value_a == value_b
-
+    for path, exp_value in dict_a.items():
+        dps_value = dict_b.get(path)
+        is_match = exp_value == dps_value
         diff_list.append({
             "path": path,
-            "value_a": value_a,
-            "value_b": value_b,
+            "exp_value": exp_value,
+            "dps_value": dps_value,
             "isMatch": is_match
         })
 
     # Check for paths in dict_b that are not in dict_a
-    for path, value_b in dict_b.items():
+    for path, dps_value in dict_b.items():
         if path not in dict_a:
             diff_list.append({
                 "path": path,
-                "value_a": "N/A",
-                "value_b": value_b,
+                "exp_value": "path no found",
+                "dps_value": "path no found",
                 "isMatch": False
             })
 
@@ -540,16 +545,16 @@ def print_compare_dicts_result(dict_a, dict_b):
     print("{:<30} {:<20} {:<20}".format("Path", "Value in A", "Value in B"))
     print("=" * 70)
 
-    for path, value_a in dict_a.items():
-        value_b = dict_b.get(path)
+    for path, exp_value in dict_a.items():
+        dps_value = dict_b.get(path)
 
-        if value_b is None:
-            value_b = "N/A"
+        if dps_value is None:
+            dps_value = "N/A"
 
-        print("{:<30} {:<20} {:<20}".format(path, value_a, value_b))
+        print("{:<30} {:<20} {:<20}".format(path, exp_value, dps_value))
         print("-" * 70)
 
-        if value_a == value_b:
+        if exp_value == dps_value:
             print("Values match.")
         else:
             print("Values do not match.")
@@ -557,10 +562,10 @@ def print_compare_dicts_result(dict_a, dict_b):
         print("=" * 70)
 
     # Check for paths in dict_b that are not in dict_a
-    for path, value_b in dict_b.items():
+    for path, dps_value in dict_b.items():
         if path not in dict_a:
-            value_a = "N/A"
-            print("{:<30} {:<20} {:<20}".format(path, value_a, value_b))
+            exp_value = "N/A"
+            print("{:<30} {:<20} {:<20}".format(path, exp_value, dps_value))
             print("-" * 70)
             print("Values do not match.")
             print("=" * 70)

@@ -1,0 +1,17 @@
+{
+    "a": "aa",
+    "b": "bb",
+    "b.c": "bb.cc",
+    "b.d": "bb.dd",
+    "b.e": "bb.ee",
+    "b.e[]": "bb.ee[]",
+    "b.e[].c": "bb.ee[].ccc",
+    "b.e[].c[]": "bb.ee[].ccc[]",
+    "f": "ff",
+    "f[]": "ff[]",
+    "f[][]": "ff[][]",
+    "g": "gg",
+    "g.a": "aa",
+    "g.b": "bb",
+    "g.c": "bb.cc"
+}
