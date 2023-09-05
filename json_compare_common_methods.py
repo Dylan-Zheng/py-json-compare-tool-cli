@@ -6,11 +6,13 @@ from prompt_toolkit.shortcuts import clear
 import difflib
 import re
 
+
 def is_blank(value):
     if value is None or value.strip() != "":
         return True
     else:
         return False
+
 
 def list_get(l, idx, default):
     try:
@@ -405,7 +407,7 @@ def create_array_sorting_rules(paths, json, arr_soring_rules={}):
     return arr_soring_rules
 
 
-def find_dps_valuey_path(json, path):
+def find_dps_value_by_path(json, path):
     pos_list = find_all_square_brackets_indices(path)
 
     prev_end_pos = 0

@@ -52,7 +52,7 @@ class HelpCmd(Commands):
               f"\npy json-compare-tools.py --option <arguments>"
               f"\npy json-compare-tools.py --{command.HELP} show usage"
               f"\npy json-compare-tools.py --{command.CREATE_MAPPING_TEMPLATE} exp_json_file dps_json_file mapping_template_file"
-              f"\npy json-compare-tools.py --{command.CREATE_SORTING_RULES} mapping_template_file"
+              # f"\npy json-compare-tools.py --{command.CREATE_SORTING_RULES} mapping_template_file"
               f"\npy json-compare-tools.py --{command.COMPARE} exp_json_file dps_json_file mapping_template_file sorting_rules_file")
 
 
@@ -145,7 +145,7 @@ class CompareCmd(Commands):
             if not diff_item["isMatch"]:
                 sheet[sheet.max_row][-1].fill = fill_not_match
 
-            for col_idx in [2, 3]:  # "Value in A" is at column index 2, "Value in B" is at column index 3
+            for col_idx in [2, 3]:
                 cell = sheet.cell(row=sheet.max_row, column=col_idx)
                 cell.alignment = Alignment(horizontal="right")
 
@@ -158,8 +158,7 @@ class CompareCmd(Commands):
                         max_length = len(cell.value)
                 except:
                     pass
-            adjusted_width = (max_length + 2) * 1.2  # Adjust width slightly for better visibility
+            adjusted_width = (max_length + 2) * 1.2
             sheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
 
-        # 保存Excel文件
         workbook.save(excel_file_path)
